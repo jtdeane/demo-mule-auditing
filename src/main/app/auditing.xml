@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="CE-3.2.1" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd 
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd 
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd 
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd 
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd ">
+    <jms:activemq-connector name="mainConnector" brokerURL="tcp://localhost:61616" doc:name="Active MQ"/>
+    <flow name="Forward-Audit-Event" doc:name="Forward-Audit-Event">
+        <http:inbound-endpoint exchange-pattern="request-response" address="http://localhost:8040/severe/audit/event" mimeType="application/xml" doc:name="HTTP"/>
+        <object-to-byte-array-transformer mimeType="application/xml" doc:name="Object to Byte Array"/>
+        <object-to-string-transformer mimeType="application/xml" doc:name="Object to String"/>
+        <async doc:name="Async">
+            <http:outbound-endpoint exchange-pattern="one-way" host="localhost" port="8080" path="spring-auditor/audit/event" mimeType="application/xml" contentType="application/xml" doc:name="HTTP"/>
+        </async>
+    </flow>
+    <flow name="Queue-Audit-Event" doc:name="Queue-Audit-Event">
+        <http:inbound-endpoint exchange-pattern="request-response" address="http://localhost:8040/catastrophic/audit/event" mimeType="application/xml" doc:name="HTTP"/>
+        <object-to-byte-array-transformer mimeType="application/xml" doc:name="Object to Byte Array"/>
+        <object-to-string-transformer mimeType="application/xml" doc:name="Object to String"/>
+        <async doc:name="Async">
+            <component class="PIICheck" doc:name="Java"/>
+            <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        </async>
+        <jms:outbound-endpoint queue="audit.events" connector-ref="mainConnector" doc:name="JMS"/>
+    </flow>
+</mule>

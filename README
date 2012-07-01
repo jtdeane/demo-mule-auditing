@@ -1,0 +1,12 @@
+This project requires Mule Studio
+1. Download and Install Mule Studio: http://www.mulesoft.org/documentation/display/ION/Mule+Studio+Download
+
+2. Open Mule Studio
+
+3. Import Project
+
+-- File-->Import
+
+-- General-->Existing Projects into Workspace
+
+-- Select $HOME/auditing
